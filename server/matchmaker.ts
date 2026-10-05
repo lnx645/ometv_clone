@@ -1,10 +1,20 @@
 import { REMATCH_COOLDOWN_MS, type ServerMessage } from './protocol.ts';
 
+/** Minimal socket surface the matchmaker needs in order to relay messages. */
+export interface PeerSocket {
+  send(data: string): void;
+}
+
 /** The subset of a connected socket the matchmaker needs. */
 export interface Peer {
   readonly id: string;
   /** Current 1:1 partner, or null while waiting. */
   partnerId: string | null;
+  /**
+   * Set when the upgrade completes and cleared on close. Null while the peer
+   * is being constructed, so `send` must tolerate its absence.
+   */
+  ws?: PeerSocket | null;
   send(message: ServerMessage): void;
 }
 

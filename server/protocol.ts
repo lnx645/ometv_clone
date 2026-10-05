@@ -23,7 +23,8 @@ export type ClientMessage =
   | { type: 'chat'; text: string };
 
 export type ServerMessage =
-  | { type: 'waiting'; position: number }
+  /** Sent on connect and whenever the peer is idle but not yet paired. */
+  | { type: 'waiting'; peerId: string; position: number }
   /** Paired with a stranger. `initiator` makes the first offer. */
   | { type: 'matched'; partnerId: string; initiator: boolean }
   /** The partner skipped, disconnected, or their instance shut down. */

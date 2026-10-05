@@ -9,9 +9,11 @@
     "dev:server": "bun --watch server/index.ts",
     "dev:client": "npm --prefix app run dev",
     "build": "npm --prefix app run build",
+    "test": "bun test",
     "typecheck": "tsc --noEmit && npm --prefix app run typecheck"
   },
   "dependencies": {
+    "@hono/bun": "^1.0.0",
     "hono": "^4.6.14"
   },
   "devDependencies": {

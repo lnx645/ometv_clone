@@ -5,6 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "types": ["bun"],
+    "allowImportingTsExtensions": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
@@ -12,5 +13,5 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true
   },
-  "include": ["server"]
+  "include": ["server", "api"]
 }

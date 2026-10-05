@@ -7,6 +7,11 @@ type Phase =
   | { kind: 'searching'; position: number }
   | { kind: 'connected'; partnerId: string };
 
+type ChatLine = { from: 'me' | 'them'; text: string };
+
+/** How many chat lines to keep before dropping the oldest. */
+const CHAT_HISTORY = 50;
+
 export default function App() {
   const [phase, setPhase] = useState<Phase>({ kind: 'idle' });
   const [status, setStatus] = useState<Status>('closed');
@@ -15,6 +20,8 @@ export default function App() {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatLine[]>([]);
+  const [draft, setDraft] = useState('');
 
   const signaling = useRef<SignalingClient | null>(null);
   const peer = useRef<PeerSession | null>(null);
@@ -58,6 +65,8 @@ export default function App() {
     });
     peer.current = session;
     setPhase({ kind: 'connected', partnerId });
+    // A new stranger means a fresh transcript.
+    setMessages([]);
     await session.start(stream, initiator, (payload) => signaling.current?.send({ type: 'signal', payload }));
   }, [endPeer]);
 
@@ -71,6 +80,9 @@ export default function App() {
       switch (message.type) {
         case 'waiting':
           setPhase((prev) => (prev.kind === 'connected' ? prev : { kind: 'searching', position: message.position }));
+          break;
+        case 'chat':
+          setMessages((prev) => [...prev.slice(-(CHAT_HISTORY - 1)), { from: 'them', text: message.text }]);
           break;
         case 'matched':
           void startPeer(message.initiator, message.partnerId);
@@ -138,6 +150,15 @@ export default function App() {
     peer.current?.setTrackEnabled('video', next);
   };
 
+  const sendChat = (event: React.FormEvent) => {
+    event.preventDefault();
+    const text = draft.trim();
+    if (!text) return;
+    signaling.current?.send({ type: 'chat', text });
+    setMessages((prev) => [...prev.slice(-(CHAT_HISTORY - 1)), { from: 'me', text }]);
+    setDraft('');
+  };
+
   const connected = phase.kind === 'connected';
 
   return (
@@ -157,6 +178,30 @@ export default function App() {
           </div>
         )}
         <video ref={localVideo} className="video video--local" autoPlay playsInline muted />
+      </section>
+
+      <section className="chat" aria-label="Chat">
+        <ol className="chat__log">
+          {messages.map((line, index) => (
+            <li key={index} className={`chat__line chat__line--${line.from}`}>
+              {line.text}
+            </li>
+          ))}
+        </ol>
+        <form className="chat__form" onSubmit={sendChat}>
+          <input
+            className="chat__input"
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder={connected ? 'Say something' : 'Matched to start chatting'}
+            disabled={!connected}
+            maxLength={2000}
+            aria-label="Message"
+          />
+          <button type="submit" className="btn" disabled={!connected || !draft.trim()}>
+            Send
+          </button>
+        </form>
       </section>
 
       {error && (

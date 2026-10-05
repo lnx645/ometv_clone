@@ -1,6 +1,6 @@
-import type { ServerMessage } from '../../server/protocol.ts';
+import type { ClientMessage, ServerMessage } from '../../server/protocol.ts';
 
-/** One-line description of the signaling transport for debugging. */
+/** Path served by the signaling Function. */
 export const SIGNALING_PATH = '/api/ws';
 
 export function signalingUrl(origin: string = window.location.origin): string {
@@ -23,13 +23,19 @@ export class SignalingClient {
   #socket: WebSocket | null = null;
   #listeners = new Set<Listener>();
   #statusListeners = new Set<StatusListener>();
-  #queue: ServerMessage[] = [];
+  #queue: ClientMessage[] = [];
   #delay = 1000;
   #closed = false;
+  #peerId: string | null = null;
   #url: string;
 
   constructor(url: string = signalingUrl()) {
     this.#url = url;
+  }
+
+  /** The server-assigned id announced in the first `waiting` frame. */
+  get peerId(): string | null {
+    return this.#peerId;
   }
 
   get status(): Status {
@@ -66,6 +72,9 @@ export class SignalingClient {
       } catch {
         return;
       }
+      if (message.type === 'waiting' && message.peerId) {
+        this.#peerId = message.peerId;
+      }
       for (const listener of this.#listeners) listener(message);
     });
 
@@ -91,7 +100,7 @@ export class SignalingClient {
   }
 
   /** Queue the frame if the socket is not open yet. */
-  send(message: ServerMessage): void {
+  send(message: ClientMessage): void {
     if (this.#socket?.readyState === WebSocket.OPEN) {
       this.#socket.send(JSON.stringify(message));
     } else {
