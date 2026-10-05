@@ -1,0 +1,13 @@
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  /** Comma-separated STUN URLs. Defaults to Google's public STUN server. */
+  readonly VITE_STUN_URLS?: string;
+  readonly VITE_TURN_URL?: string;
+  readonly VITE_TURN_USERNAME?: string;
+  readonly VITE_TURN_CREDENTIAL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
